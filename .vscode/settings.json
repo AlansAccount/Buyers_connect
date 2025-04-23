@@ -1,0 +1,6 @@
+{
+	"github.copilot.editor.enableAutoCompletions": true,
+	"html.autoClosingTags": true,
+	"javascript.autoClosingTags": true,
+	"typescript.autoClosingTags": true
+}

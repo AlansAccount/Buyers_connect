@@ -1,0 +1,140 @@
+// Step 1: Main categories
+export const MAIN_PROPERTY_TYPES: string[] = [
+	"Residential",
+	"Commercial",
+	"Industrial",
+	"Agricultural / Rural",
+	"Institutional / Government / Public",
+	"Special-Purpose / Misc",
+	"Land",
+];
+
+// Step 2: Interface for subcategories (optional, but helps with typing)
+interface SubPropertyGroup {
+	category: string;
+	subTypes: string[];
+}
+
+// Step 3: Subcategories mapped to each main category
+export const SUB_PROPERTY_TYPES: SubPropertyGroup[] = [
+	{
+		category: "Residential",
+		subTypes: [
+			"Single-Family Home",
+			"Multi-Family Home (Duplex, Triplex, Quadplex)",
+			"Townhouse / Rowhouse",
+			"Condominium (Condo)",
+			"Cooperative (Co-op)",
+			"Apartment",
+			"Loft",
+			"Studio",
+			"Penthouse",
+			"Manufactured / Mobile Home",
+			"Modular Home",
+			"Tiny Home",
+			"Bungalow",
+			"Cabin",
+			"Vacation / Holiday Home",
+			"Mansion",
+			"Villa",
+			"Chalet",
+		],
+	},
+	{
+		category: "Commercial",
+		subTypes: [
+			"Office Building",
+			"Retail Store / Shop",
+			"Shopping Mall / Shopping Center",
+			"Strip Mall / Retail Plaza",
+			"Restaurant / Bar / Nightclub",
+			"Hotel / Motel",
+			"Bed & Breakfast / Inn",
+			"Mixed-Use Building",
+			"Car Dealership",
+			"Auto Repair Shop",
+			"Gas Station",
+			"Warehouse Store / Big-Box Retail",
+			"Co-Working Space",
+			"Self-Storage Facility",
+		],
+	},
+	{
+		category: "Industrial",
+		subTypes: [
+			"Manufacturing Plant",
+			"Warehouse / Distribution Center",
+			"Flex Space",
+			"Data Center",
+			"Cold Storage Facility",
+			"Food Processing Plant",
+			"Power Plant",
+			"Heavy Industrial Complex",
+			"Research & Development Facility",
+		],
+	},
+	{
+		category: "Agricultural / Rural",
+		subTypes: [
+			"Farmland",
+			"Ranch",
+			"Orchard",
+			"Vineyard",
+			"Pasture / Meadow",
+			"Timberland / Forest Land",
+			"Greenhouse / Nursery",
+			"Plantation",
+			"Equestrian Property (Horse Stable)",
+		],
+	},
+	{
+		category: "Institutional / Government / Public",
+		subTypes: [
+			"Government Building",
+			"Military Base / Installation",
+			"Police Station",
+			"Fire Station",
+			"Post Office",
+			"Embassy / Consulate",
+			"Prison / Correctional Facility",
+			"School (Public, Private)",
+			"University / College Campus",
+			"Library",
+			"Museum",
+			"Community Center",
+			"Hospital / Medical Center",
+			"Nursing Home / Assisted Living",
+			"Religious Facility",
+			"Public Infrastructure (e.g., Water Treatment Plant)",
+		],
+	},
+	{
+		category: "Special-Purpose / Misc",
+		subTypes: [
+			"Stadium / Arena",
+			"Convention Center",
+			"Theater / Performing Arts Center",
+			"Amusement Park / Theme Park",
+			"Marina / Dock / Boat Slip",
+			"Golf Course",
+			"Cemetery",
+			"Funeral Home",
+			"Parking Lot / Parking Garage",
+			"Mobile Home Park",
+			"Sports Complex",
+			"RV Park",
+			"Campground",
+			"Ski Resort / Mountain Resort",
+			"Timeshare",
+		],
+	},
+	{
+		category: "Land",
+		subTypes: [
+			"Raw / Vacant Land",
+			"Brownfield Land",
+			"Infill Land",
+			"Subdivided Lot",
+		],
+	},
+];

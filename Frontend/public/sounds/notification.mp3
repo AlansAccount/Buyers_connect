@@ -1,0 +1,1 @@
+const audio = typeof Audio !== "undefined" ? new Audio("/sounds/notification.mp3") : null;

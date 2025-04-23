@@ -1,0 +1,56 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+	--background: #ffffff;
+	--foreground: #171717;
+	--font-primary: "Inter", sans-serif;
+}
+
+@layer utilities {
+	.animate-fade {
+		transition-property: opacity;
+		transition-duration: 500ms;
+		transition-timing-function: ease-in-out;
+		opacity: 1;
+	}
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--background: #0a0a0a;
+		--foreground: #ededed;
+	}
+}
+
+/* In your global CSS (e.g., styles/globals.css) */
+@keyframes fade-in-out {
+	0% {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	20% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	80% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+}
+
+.animate-fade-in-out {
+	animation: fade-in-out 5s ease-in-out;
+}
+
+body {
+	color: var(--foreground);
+	background: var(--background);
+	font-family: var(--font-primary);
+}
