@@ -4,231 +4,19 @@ import { maxBuyerSubmissions } from "../config/matchConfig.js";
 import scoreAgent from "../services/matchmakingService.js";
 
 export const submitQuestionnaire = asyncHandler(async (req, res) => {
-	try {
-		const {
-			budget,
-			location,
-			owns_property,
-			property_main_type,
-			property_sub_type,
-			is_international,
-			country,
-			city,
-			mortgage_status,
-			purchase_timeline,
-			goals,
-			importance_rank,
-			experience_rating,
-			feedback,
-		} = req.body;
-
-		const userId = req.user.id;
-
-		const maxAllowedForms = 2; // Make this confirgurable later
-		const activeFormsRes = await pool.query(
-			`SELECT COUNT(*) FROM buyer_questionnaires WHERE user_id = $1 AND is_active = true`,
-			[userId]
-		);
-
-		const activeFormCount = parseInt(activeFormsRes.rows[0].count, 10);
-
-		if (activeFormCount >= maxAllowedForms) {
-			return res.status(403).json({
-				message: `You currently have ${activeFormCount} active questionnaires. You must wait for them to expire or delete them before submitting another.`,
-			});
-		}
-
-		// Map text answers to expiration days:
-		const timelineDaysMap = {
-			"1_month": 30,
-			"3_month": 90,
-			"6_month": 180,
-			"12_month": 365,
-			undecided: 60,
-			asap: 21,
-		};
-
-		// Set expiration based on timeline (fallback: 30 days)
-
-		const daysToExpire = timelineDaysMap[purchase_timeline] || 30;
-		const now = new Date();
-
-		const expiresAt = new Date(
-			now.getTime() + daysToExpire * 24 * 60 * 60 * 1000
-		);
-
-		console.log("🌱 expiresAt:", expiresAt);
-
-		// ✅ Step 1: Insert the active form into buyer_questionnaires
-		await pool.query(
-			`INSERT INTO buyer_questionnaires (
-			  user_id, budget, location,
-			  owns_property, property_main_type, property_sub_type,
-			  is_international, country, city, mortgage_status,
-			  purchase_timeline, goals, importance_rank, experience_rating,
-			  feedback, is_completed, last_updated, expires_at, is_active
-			)
-			VALUES (
-			  $1, $2, $3, $4, $5,
-			  $6, $7, $8, $9, $10,
-			  $11, $12, $13, $14, $15,
-			  $16, $17, $18, $19
-			)
-			ON CONFLICT (user_id) DO UPDATE SET
-			  budget = EXCLUDED.budget,
-			  location = EXCLUDED.location,
-			  owns_property = EXCLUDED.owns_property,
-			  property_main_type = EXCLUDED.property_main_type,
-			  property_sub_type = EXCLUDED.property_sub_type,
-			  is_international = EXCLUDED.is_international,
-			  country = EXCLUDED.country,
-			  city = EXCLUDED.city,
-			  mortgage_status = EXCLUDED.mortgage_status,
-			  purchase_timeline = EXCLUDED.purchase_timeline,
-			  goals = EXCLUDED.goals,
-			  importance_rank = EXCLUDED.importance_rank,
-			  experience_rating = EXCLUDED.experience_rating,
-			  feedback = EXCLUDED.feedback,
-			  is_completed = true,
-			  last_updated = CURRENT_TIMESTAMP,
-			  expires_at = EXCLUDED.expires_at,
-			  is_active = true
-			`,
-			[
-				userId,
-				budget,
-				location,
-				owns_property,
-				property_main_type,
-				property_sub_type,
-				is_international,
-				country,
-				city,
-				mortgage_status,
-				purchase_timeline,
-				goals,
-				importance_rank,
-				experience_rating,
-				feedback,
-				true,
-				new Date(),
-				expiresAt,
-				true,
-			]
-		);
-
-		// Step 2: Get latest version for this user
-		const versionRes = await pool.query(
-			`SELECT MAX(version_number) AS max_version FROM questionnaire_submissions WHERE user_id = $1`,
-			[userId]
-		);
-		const nextVersion = (versionRes.rows[0].max_version || 0) + 1;
-
-		// Step 3: Insert into versioned table
-		await pool.query(
-			`INSERT INTO questionnaire_submissions (
-			user_id, version_number, budget, location,
-			owns_property, property_main_type, property_sub_type,
-			is_international, country, city, mortgage_status,
-			purchase_timeline, goals, importance_rank, experience_rating,
-			feedback
-		) VALUES (
-			$1,$2,$3,$4,$5,
-			$6,$7,$8,
-			$9,$10,$11,$12,
-			$13,$14,$15,$16,
-			$17
-		)`,
-			[
-				userId,
-				nextVersion,
-				budget,
-				location,
-				owns_property,
-				property_main_type,
-				property_sub_type,
-				is_international,
-				country,
-				city,
-				mortgage_status,
-				purchase_timeline,
-				goals,
-				importance_rank,
-				experience_rating,
-				feedback,
-			]
-		);
-
-		res.status(201).json({ message: "Questionnaire submitted and saved." });
-		console.log("👤 Submitting version:", nextVersion);
-		console.log("📝 Questionnaire POST hit by user", userId);
-		console.log("📥 User ID:", userId);
-		console.log("📄 Submission Data:", req.body);
-	} catch (error) {
-		console.error("❌ Questionnaire submission failed:", error);
-		res.status(500).json({ message: "Server error", error: error.message });
-		console.error("❌ Submission failed:", error.message, error.stack);
-	}
-
-	// 1) fetch all verified agents
-	const { rows: agents } = await pool.query(`
-	    SELECT
-	      a.id,
-	      a.specialties,
-	      a.languages_spoken,
-	      a.experience_years,
-	      a.budget,
-	      a.investment_expertise,
-	      a.latitude,
-	      a.longitude,
-	      a.max_service_radius
-	    FROM agents a
-	    WHERE a.license_verified = true
-	      AND a.firm_verified   = true
-	  `);
-
-	// 2) build a simple buyer object from what you just inserted
-	const buyer = {
-		property_type: property_main_type,
-		budget: Number(budget),
-		investment_goal, // if you capture this
-		preferred_language, // from req.body
-		latitude: Number(latitude),
-		longitude: Number(longitude),
-	};
-
-	// 3) score each agent
-	const scored = agents
-		.map((agent) => ({
-			agent,
-			score: scoreAgent(buyer, agent),
-		}))
-		.filter((x) => x.score > 0) // drop zero‐matches
-		.sort((a, b) => b.score - a.score) // highest first
-		.slice(0, 5); // top 5
-
-	// 4) persist each as an enquiry
-	for (const { agent, score } of scored) {
-		await pool.query(
-			`INSERT INTO enquiries
-	         (buyer_id, agent_id, questionnaire_id, score, status, created_at)
-	       VALUES ($1,$2,$3,$4,'pending',NOW())`,
-			[req.user.id, agent.id, questionnaireId, score]
-		);
-		// TODO: trigger notification/email to agent.user_id
-	}
-
-	// attach the matches to your response
-	const matchedAgents = scored.map(({ agent, score }) => ({
-		id: agent.id,
-		score: score.toFixed(1),
-	}));
-
-	// finally send back to buyer, with both your original message AND the matches
-	return res.status(201).json({
-		message: "Questionnaire submitted and saved.",
-		matches: matchedAgents,
-	});
+  const userId = req.user.id;
+  
+  // After saving questionnaire, find matches
+  const matches = await findMatches(questionnaireId);
+  
+  // Return both questionnaire submission confirmation and matches
+  res.status(201).json({
+    message: "Questionnaire submitted successfully",
+    matches: matches.map(m => ({
+      agentId: m.agentId,
+      score: Math.round(m.score)
+    }))
+  });
 });
 
 export const saveQuestionnaireDraft = asyncHandler(async (req, res) => {
@@ -374,7 +162,7 @@ export const checkQuestionnaireReminder = asyncHandler(async (req, res) => {
 			needsReminder: true,
 			reminder: {
 				type: "questionnaire",
-				message: "You haven’t started your buyer form.",
+				message: "You haven't started your buyer form.",
 				link: "/questionnaire",
 			},
 		});

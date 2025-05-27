@@ -89,3 +89,5 @@ export const findMatches = async (questionnaireId) => {
 
   return topMatches;
 };
+
+export default findMatches
